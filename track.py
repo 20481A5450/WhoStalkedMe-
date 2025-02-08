@@ -13,17 +13,15 @@ TRACKER_PATH = os.path.join(os.path.dirname(os.path.abspath(__file__)), "tracker
 @app.route("/tracker.png")
 def track():
     try:
-        ip = request.remote_addr
-        user_agent = request.headers.get("User-Agent")
+        # Try to get the real visitor's IP
+        forwarded_for = request.headers.get("X-Forwarded-For", "")
+        real_ip = forwarded_for.split(",")[0].strip() if forwarded_for else request.remote_addr
+        
+        user_agent = request.headers.get("User-Agent", "Unknown")
         referrer = request.referrer or "No Referrer"
 
         # Print visitor details to logs
-        logging.info(f"📌 Visitor IP: {ip}, User-Agent: {user_agent}, Referrer: {referrer}")
-
-        # Ensure tracker.png exists
-        if not os.path.exists(TRACKER_PATH):
-            logging.error(f"❌ tracker.png not found at {TRACKER_PATH}")
-            return "Tracker image not found", 500
+        logging.info(f"📌 Visitor IP: {real_ip}, User-Agent: {user_agent}, Referrer: {referrer}")
 
         return send_file(TRACKER_PATH, mimetype="image/png")
 
